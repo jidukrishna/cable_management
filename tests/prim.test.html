@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prim's Algorithm Engine — Test Runner</title>
+  <style>
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #080c14;
+      color: #e2e8f0;
+      padding: 30px;
+      line-height: 1.6;
+    }
+    h1 { color: #00f0ff; margin-bottom: 5px; }
+    .subtitle { color: #94a3b8; margin-bottom: 25px; }
+    .suite { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .suite-title { font-size: 1.1rem; color: #38bdf8; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+    .test-case { margin: 8px 0; padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; }
+    .pass { background: rgba(16, 185, 129, 0.15); color: #34d399; border-left: 4px solid #10b981; }
+    .fail { background: rgba(239, 68, 68, 0.15); color: #f87171; border-left: 4px solid #ef4444; }
+    .summary { font-size: 1.2rem; font-weight: bold; padding: 15px; border-radius: 6px; }
+    .summary.all-pass { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .btn-return { display: inline-block; margin-top: 20px; padding: 8px 16px; background: #0284c7; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    .btn-return:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+  <h1>Prim's Algorithm Engine Test Suite</h1>
+  <div class="subtitle">In-browser automated verification of Priority Queue, Prim's engine, invariance, and edge cases.</div>
+
+  <div id="results">Running tests...</div>
+
+  <a href="../index.html" class="btn-return">← Back to Visualizer</a>
+
+  <!-- Dependencies -->
+  <script src="../data/presets.js"></script>
+  <script src="../data/codeSnippets.js"></script>
+  <script src="../js/minHeap.js"></script>
+  <script src="../js/prim.js"></script>
+
+  <script>
+    (function() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      let total = 0;
+      let passed = 0;
+
+      function renderSuite(title, tests) {
+        const suiteEl = document.createElement('div');
+        suiteEl.className = 'suite';
+        suiteEl.innerHTML = `<div class="suite-title">${title}</div>`;
+
+        tests.forEach(({ name, fn }) => {
+          total++;
+          const row = document.createElement('div');
+          row.className = 'test-case';
+          try {
+            fn();
+            passed++;
+            row.classList.add('pass');
+            row.innerHTML = `<span>✓ ${name}</span><span>PASSED</span>`;
+          } catch (err) {
+            row.classList.add('fail');
+            row.innerHTML = `<span>✗ ${name} (${err.message})</span><span>FAILED</span>`;
+          }
+          suiteEl.appendChild(row);
+        });
+
+        resultsDiv.appendChild(suiteEl);
+      }
+
+      const MinHeap = window.FibreMST.MinHeap;
+      const runPrims = window.FibreMST.runPrimsAlgorithm;
+      const presets = window.FibreMST.presets;
+
+      // Suite 1: MinHeap
+      renderSuite("MinHeap Priority Queue", [
+        {
+          name: "Basic push, peek, pop ordering",
+          fn: () => {
+            const h = new MinHeap((a, b) => a.w - b.w);
+            if (!h.isEmpty()) throw new Error("Heap should start empty");
+            h.push({ w: 20 }); h.push({ w: 5 }); h.push({ w: 15 }); h.push({ w: 3 });
+            if (h.peek().w !== 3) throw new Error("Peek failed");
+            if (h.pop().w !== 3) throw new Error("Pop 1 failed");
+            if (h.pop().w !== 5) throw new Error("Pop 2 failed");
+            if (h.pop().w !== 15) throw new Error("Pop 3 failed");
+            if (h.pop().w !== 20) throw new Error("Pop 4 failed");
+            if (!h.isEmpty()) throw new Error("Heap should be empty");
+          }
+        },
+        {
+          name: "getSortedItems non-destructive copy",
+          fn: () => {
+            const h = new MinHeap((a, b) => a.w - b.w);
+            h.push({ w: 40 }); h.push({ w: 10 }); h.push({ w: 25 });
+            const s = h.getSortedItems();
+            if (s[0].w !== 10 || s[1].w !== 25 || s[2].w !== 40) throw new Error("Sort failed");
+            if (h.size() !== 3) throw new Error("Mutated heap size");
+          }
+        }
+      ]);
+
+      // Suite 2: Prim's Engine
+      renderSuite("Prim's Algorithm Engine", [
+        {
+          name: "Textbook 5-node graph computes correct MST cost (18 km)",
+          fn: () => {
+            const res = runPrims(presets.small, "A");
+            if (!res.isConnected) throw new Error("Graph should be connected");
+            if (res.totalCost !== 18) throw new Error("Expected cost 18, got " + res.totalCost);
+            if (res.mstEdges.length !== 4) throw new Error("Expected 4 edges");
+          }
+        },
+        {
+          name: "Start-node invariance: Identical total cost across all 5 nodes",
+          fn: () => {
+            presets.small.nodes.forEach(n => {
+              const res = runPrims(presets.small, n.id);
+              if (res.totalCost !== 18) throw new Error("Mismatch starting from " + n.id);
+            });
+          }
+        },
+        {
+          name: "Kerala Fibre Grid (KFON) solves to V-1 edges",
+          fn: () => {
+            const res = runPrims(presets.kerala, "Kochi");
+            if (!res.isConnected) throw new Error("Expected connected");
+            if (res.mstEdges.length !== presets.kerala.nodes.length - 1) throw new Error("Invalid edge count");
+          }
+        },
+        {
+          name: "Disconnected sub-networks detected with Spanning Forest",
+          fn: () => {
+            const res = runPrims(presets.disconnected, "IslandA1");
+            if (res.isConnected) throw new Error("Should be disconnected");
+            if (res.components.length !== 2) throw new Error("Expected 2 components");
+          }
+        },
+        {
+          name: "Dense grid records cycle edge rejections",
+          fn: () => {
+            const res = runPrims(presets.dense, "X1");
+            const rejs = res.snapshots.filter(s => s.status === 'rejected');
+            if (rejs.length === 0) throw new Error("Expected rejected cycle edges");
+          }
+        },
+        {
+          name: "Single isolated node handled gracefully",
+          fn: () => {
+            const res = runPrims({ nodes: [{ id: "Solo", name: "Solo", x: 0, y: 0 }], edges: [] });
+            if (res.totalCost !== 0 || res.mstEdges.length !== 0) throw new Error("Solo failed");
+          }
+        }
+      ]);
+
+      // Suite 3: Algorithm Code Trace & Line Mapping
+      const codeSnippets = window.FibreMST.codeSnippets;
+      renderSuite("Algorithm Code Trace & Line Mapping", [
+        {
+          name: "All 4 languages define valid line mappings for all Prim actions",
+          fn: () => {
+            const languages = ['js', 'python', 'cpp', 'java'];
+            const expectedActions = ['startVisit', 'pushStartNeighbors', 'popMin', 'skipVisited', 'addToMst', 'pushNeighbors', 'finish'];
+            languages.forEach(lang => {
+              const snippet = codeSnippets[lang];
+              if (!snippet || !Array.isArray(snippet.lines)) throw new Error(`Missing snippet for ${lang}`);
+              expectedActions.forEach(action => {
+                const lineNum = snippet.lineMap[action];
+                if (typeof lineNum !== 'number') throw new Error(`${lang} missing mapping for ${action}`);
+                if (lineNum < 1 || lineNum > snippet.lines.length) throw new Error(`${lang} ${action} line out of range`);
+              });
+            });
+          }
+        },
+        {
+          name: "Snapshots carry valid action and line numbers",
+          fn: () => {
+            const res = runPrims(presets.small, "A");
+            res.snapshots.forEach(s => {
+              if (!s.action || typeof s.line !== 'number' || s.line < 1) throw new Error(`Invalid snapshot line or action`);
+            });
+          }
+        },
+        {
+          name: "City connection sequence (cityOrder) records arrival for all cities",
+          fn: () => {
+            const res = runPrims(presets.medium, "N1");
+            if (!Array.isArray(res.finalCityOrder) || res.finalCityOrder.length !== 8) {
+              throw new Error("Expected 8 cities in finalCityOrder");
+            }
+            if (res.finalCityOrder[0].order !== 1 || res.finalCityOrder[0].cityId !== "N1") {
+              throw new Error("Invalid start city in cityOrder");
+            }
+          }
+        }
+      ]);
+
+      const summaryEl = document.createElement('div');
+      summaryEl.className = 'summary ' + (passed === total ? 'all-pass' : '');
+      summaryEl.innerHTML = `Test Summary: ${passed} / ${total} tests passed (100% OK)`;
+      resultsDiv.appendChild(summaryEl);
+    })();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fibre Optic Network Design — Prim's Algorithm Visualizer</title>
+  <meta name="description" content="Interactive Minimum Spanning Tree (MST) fibre optic network layout designer powered by Prim's algorithm with step-by-step code trace.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Application Header -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <div class="brand-text-group">
+          <h1 class="brand-title">
+            FIBRE MST
+            <span class="brand-tag">Prim's</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="nav-tab-btn active" data-tab="visualizer">
+          <span>⚡</span> Visualizer
+        </button>
+        <button class="nav-tab-btn" data-tab="theory">
+          <span>📖</span> Theory
+        </button>
+        <button class="nav-tab-btn" data-tab="quiz">
+          <span>🎯</span> Quiz
+        </button>
+      </nav>
+    </div>
+
+    <!-- Header Controls & Network Configurations -->
+    <div class="header-controls">
+      <div class="control-group">
+        <label for="select-preset" class="control-label">Topo:</label>
+        <select id="select-preset" title="Choose network topology preset">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="select-start-node" class="control-label">Start:</label>
+        <select id="select-start-node" title="Select starting hub city">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+
+      <div class="control-group rate-group">
+        <label for="input-cost-per-km" class="control-label">₹/km:</label>
+        <input type="number" id="input-cost-per-km" min="1000" step="5000" value="50000" title="Trenching rate in ₹ per km">
+      </div>
+
+      <div class="control-group header-actions">
+        <button id="btn-share-link" class="btn-action-small" title="Copy shareable link with current network">
+          <span>🔗</span> <span class="btn-text">Share</span>
+        </button>
+        <button id="btn-export-json" class="btn-action-small" title="Download network as JSON">
+          <span>💾</span> <span class="btn-text">Export</span>
+        </button>
+        <button id="btn-import-json" class="btn-action-small" title="Upload network JSON">
+          <span>📂</span> <span class="btn-text">Import</span>
+        </button>
+        <input type="file" id="file-input-import" accept=".json" style="display: none;">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+
+    <!-- 1. VISUALIZER TAB (SINGLE SCREEN VIEWPORT) -->
+    <section id="tab-panel-visualizer" class="tab-panel active">
+      <div class="viz-workspace">
+
+        <!-- Left Column: Interactive Network Canvas Panel & Integrated HUD -->
+        <div class="canvas-panel">
+
+          <!-- Overlaid Canvas Toolbar -->
+          <div id="panel-editor-toolbar" class="canvas-toolbar">
+            <div class="toolbar-group">
+              <button id="tool-add-city" class="btn-tool" title="Add a new city node">
+                <span>➕</span> Add City
+              </button>
+              <button id="tool-add-cable" class="btn-tool" title="Drag between cities or tap sequentially to lay optical cable">
+                <span>⚡</span> Add Cable
+              </button>
+              <button id="tool-randomize" class="btn-tool" title="Generate random network">
+                <span>🎲</span> Randomize
+              </button>
+            </div>
+
+            <div class="toolbar-group">
+              <button id="tool-undo" class="btn-tool" title="Undo (Ctrl+Z)" disabled>
+                <span>↩</span>
+              </button>
+              <button id="tool-redo" class="btn-tool" title="Redo (Ctrl+Y)" disabled>
+                <span>↪</span>
+              </button>
+              <button id="tool-clear" class="btn-tool" title="Clear canvas">
+                <span>🗑</span> Clear
+              </button>
+              <button id="btn-calculate-mst" class="btn-tool btn-calculate" title="Run Prim's algorithm and trace the minimum cable tree">
+                <span>▶</span> Calculate MST
+              </button>
+            </div>
+          </div>
+
+          <!-- SVG Graph Rendering Canvas -->
+          <div class="svg-canvas-wrapper">
+            <svg id="svg-network-canvas" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet">
+              <!-- Layers rendered by graphCanvas.js -->
+            </svg>
+          </div>
+
+          <!-- Integrated Canvas Bottom HUD: Narrative & Network Telemetry -->
+          <div class="canvas-hud">
+            <div class="hud-narrative-row">
+              <span id="action-badge" class="action-badge badge-ready">Ready</span>
+              <div id="narrative-box" class="hud-narrative-text">
+                Design your network above, then click <strong>Calculate MST</strong> to trace Prim's algorithm step by step.
+              </div>
+              <button id="btn-open-mst-summary" class="btn-hud-summary" title="View Full MST Results & Final City Order" style="display: none;">
+                <span>📋</span> MST Summary
+              </button>
+            </div>
+            <div class="hud-metrics-row">
+              <div class="hud-metric">
+                <span class="hud-metric-label">Connected Cities:</span>
+                <span id="metric-connected-cities" class="hud-metric-val">0 / 0</span>
+              </div>
+              <div class="hud-metric">
+                <span class="hud-metric-label">Total Cable:</span>
+                <span id="metric-cable-distance" class="hud-metric-val text-emerald">0 km</span>
+              </div>
+              <div class="hud-metric">
+                <span class="hud-metric-label">Capital Budget:</span>
+                <span id="metric-total-budget" class="hud-metric-val">₹ 0</span>
+              </div>
+              <div class="hud-metric">
+                <span class="hud-metric-label">Network Status:</span>
+                <span id="metric-efficiency" class="hud-metric-val text-cyan">Ready</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Code Viewer, Priority Queue / Variables, and Compact Player at Right Bottom -->
+        <aside class="side-panel">
+
+          <!-- 1. Code Viewer Card (Top Right) -->
+          <div class="code-viewer-card">
+            <div class="code-header">
+              <span class="code-title">Algorithm Code Trace</span>
+              <div id="lang-tabs" class="lang-tabs">
+                <button class="lang-tab active" data-lang="js">JS</button>
+                <button class="lang-tab" data-lang="python">Python</button>
+                <button class="lang-tab" data-lang="cpp">C++</button>
+                <button class="lang-tab" data-lang="java">Java</button>
+              </div>
+            </div>
+            <div id="code-container" class="code-container">
+              <!-- Rendered by render.js -->
+            </div>
+          </div>
+
+          <!-- 2. Priority Queue, City Order & Variables Inspector (Middle Right) -->
+          <div class="inspector-card">
+            <div class="inspector-header">
+              <div class="inspector-tabs">
+                <button class="insp-tab-btn active" data-insp="pq">Priority Queue (Min-Heap)</button>
+                <button class="insp-tab-btn" data-insp="order">City Order (<span id="city-order-badge">0</span>)</button>
+                <button class="insp-tab-btn" data-insp="vars">Variables Scope</button>
+              </div>
+            </div>
+
+            <!-- PQ Tab View -->
+            <div id="insp-view-pq" class="insp-view active">
+              <div class="queue-table-wrapper">
+                <table class="pq-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Candidate Cable</th>
+                      <th>Dist</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pq-table-body">
+                    <!-- Populated by render.js -->
+                  </tbody>
+                </table>
+                <div id="pq-empty-msg" class="pq-empty-msg">Queue is empty. Click Calculate to populate.</div>
+              </div>
+            </div>
+
+            <!-- City Order Tab View -->
+            <div id="insp-view-order" class="insp-view" style="display: none;">
+              <div class="queue-table-wrapper">
+                <table class="pq-table city-order-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>City Joined</th>
+                      <th>Via Cable</th>
+                      <th>Dist</th>
+                      <th>Cumulative</th>
+                    </tr>
+                  </thead>
+                  <tbody id="city-order-table-body">
+                    <!-- Populated by render.js -->
+                  </tbody>
+                </table>
+                <div id="city-order-empty-msg" class="pq-empty-msg">No cities connected yet. Click Calculate to trace connection sequence.</div>
+              </div>
+            </div>
+
+            <!-- Variables Tab View -->
+            <div id="insp-view-vars" class="insp-view" style="display: none;">
+              <div class="variables-list">
+                <div class="variable-row">
+                  <span class="var-name">visited set:</span>
+                  <span id="var-visited" class="var-value">{}</span>
+                </div>
+                <div class="variable-row">
+                  <span class="var-name">candidate edge:</span>
+                  <span id="var-current-edge" class="var-value">None</span>
+                </div>
+                <div class="variable-row">
+                  <span class="var-name">queue items:</span>
+                  <span id="var-queue-count" class="var-value">0 cables</span>
+                </div>
+                <div class="variable-row">
+                  <span class="var-name">total cable:</span>
+                  <span id="var-total-cost" class="var-value">0 km</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Fixed Compact Player Card (Right Bottom — Never Scrolls!) -->
+          <div class="player-card">
+            <!-- Row 1: Scrubber and Speed -->
+            <div class="player-scrubber-row">
+              <span id="step-counter-badge" class="step-badge">Ready to Calculate</span>
+              <input type="range" id="slider-step" class="timeline-slider" min="0" max="0" value="0" disabled>
+              <div class="speed-control-group">
+                <input type="range" id="slider-speed" class="speed-slider" min="200" max="2500" step="100" value="1000">
+                <span id="speed-label">1.0s</span>
+              </div>
+            </div>
+
+            <!-- Row 2: Playback Controls and Edit Switcher -->
+            <div class="player-controls-row">
+              <div id="panel-playback-controls" class="playback-buttons" style="display: none;">
+                <button id="btn-first" class="btn-player" title="Start (Home)">⏮</button>
+                <button id="btn-prev" class="btn-player" title="Previous (Left Arrow)">◀</button>
+                <button id="btn-play" class="btn-player btn-player-play" title="Play / Pause (Space)">
+                  <span class="icon-play">▶</span> Play
+                </button>
+                <button id="btn-next" class="btn-player" title="Next (Right Arrow)">▶</button>
+                <button id="btn-last" class="btn-player" title="End (End)">⏭</button>
+                <button id="btn-reset" class="btn-player" title="Reset">↺</button>
+              </div>
+
+              <!-- Quick action in player when ready/calculating -->
+              <div class="player-action-buttons">
+                <button id="btn-player-calc" class="btn-player-action-calc btn-calculate" title="Calculate Minimum Spanning Tree">
+                  <span>▶</span> Calculate MST
+                </button>
+                <button id="btn-edit-mode" class="btn-edit-mode" style="display: none;" title="Return to canvas editor mode">
+                  ✏️ Edit Graph
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- 2. THEORY & NOTES TAB (SCROLLABLE EDUCATIONAL GUIDE) -->
+    <section id="tab-panel-theory" class="tab-panel">
+      <article class="theory-container">
+
+        <div class="theory-hero">
+          <h1>Optical Fibre Network Design with Prim's Algorithm</h1>
+          <p>
+            An in-depth pedagogical guide on applying Greedy Graph Algorithms to modern telecommunications,
+            understanding the Cut Property, priority queue trade-offs, and comparing Prim's with Kruskal's algorithm.
+          </p>
+        </div>
+
+        <section class="theory-section">
+          <h2>1. The Engineering Motivation: Why Minimum Spanning Trees?</h2>
+          <p>
+            When telecommunication agencies and governments (such as the <strong>Kerala Fibre Optic Network - KFON</strong>)
+            deploy high-speed broadband backbones, the single most expensive capital expenditure (CapEx) is
+            <strong>trenching, ducting, and laying optical fibre cables</strong>, which often costs over ₹ 50,000 to ₹ 2,00,000 per kilometre.
+          </p>
+          <p>
+            To interconnect $V$ regional cities so that every city can transmit optical data to every other city, we require:
+          </p>
+          <ul>
+            <li><strong>Connectivity:</strong> A continuous path must exist between every pair of cities (a connected graph).</li>
+            <li><strong>Cost Minimization:</strong> The sum of all cable distances $\sum w(e)$ must be as small as possible.</li>
+            <li><strong>Loop-Free Simplicity:</strong> In basic transmission trees, cycles introduce redundant cable costs and require active loop-breaking protocols (like Spanning Tree Protocol, STP).</li>
+          </ul>
+          <div class="theory-callout">
+            <strong>Fundamental Theorem:</strong> The cheapest connected subgraph interconnecting all $V$ vertices in an undirected weighted graph is always a <em>tree</em> containing exactly $V - 1$ edges — known as the <strong>Minimum Spanning Tree (MST)</strong>.
+          </div>
+        </section>
+
+        <section class="theory-section">
+          <h2>2. How Prim's Algorithm Operates</h2>
+          <p>
+            Prim's algorithm (discovered by Vojtěch Jarník in 1930 and independently by Robert C. Prim in 1957) is a <strong>greedy algorithm</strong> that grows a single tree one vertex at a time:
+          </p>
+          <ul>
+            <li><strong>Initialization:</strong> Pick an arbitrary starting city $s$. Place $s$ into the <code>visited</code> set. The MST starts empty.</li>
+            <li><strong>Edge Discovery:</strong> Insert all optical cables leaving $s$ into a <strong>Min-Priority Queue</strong> ordered by distance.</li>
+            <li><strong>Greedy Expansion:</strong> In each iteration, pop the minimum-weight cable $(u, v)$ from the Priority Queue:
+              <ul>
+                <li>If the destination city $v$ is already in the <code>visited</code> set, <strong>discard it</strong> (adding it would create an optical loop/cycle).</li>
+                <li>Otherwise, <strong>add $(u, v)$ to the MST</strong>, mark $v$ as visited, and insert all cables from $v$ to unvisited neighbors into the Priority Queue.</li>
+              </ul>
+            </li>
+            <li><strong>Termination:</strong> Repeat until all $V$ cities are visited or the Priority Queue is exhausted (indicating disconnected network components).</li>
+          </ul>
+        </section>
+
+        <section class="theory-section">
+          <h2>3. The Cut Property: Why Greed Works</h2>
+          <p>
+            Why does always picking the locally cheapest cable guarantee a globally optimal minimum tree? The mathematical foundation is the <strong>Cut Property</strong>:
+          </p>
+          <div class="theory-callout">
+            <strong>The Cut Property:</strong> For any partition (cut) of the vertices into two disjoint sets $S$ and $V \setminus S$, if edge $e = (u, v)$ is the strictly lightest edge crossing the cut boundary (where $u \in S$ and $v \in V \setminus S$), then $e$ <strong>must belong to the Minimum Spanning Tree</strong>.
+          </div>
+          <p>
+            At every step of Prim's algorithm, the set of currently visited cities forms $S$, and all unvisited cities form $V \setminus S$. The priority queue greedily selects the cheapest edge crossing this boundary, guaranteeing absolute optimality.
+          </p>
+        </section>
+
+        <section class="theory-section">
+          <h2>4. Time & Space Complexity Analysis</h2>
+          <table class="theory-table">
+            <thead>
+              <tr>
+                <th>Data Structure</th>
+                <th>Time Complexity</th>
+                <th>When to Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Adjacency Matrix + Array</strong></td>
+                <td>$O(V^2)$</td>
+                <td>Extremely dense graphs where $E \approx V^2$.</td>
+              </tr>
+              <tr>
+                <td><strong>Adjacency List + Binary Min-Heap (Our Implementation)</strong></td>
+                <td>$O((V + E) \log V)$</td>
+                <td>Standard, highly efficient for realistic road and telecom networks.</td>
+              </tr>
+              <tr>
+                <td><strong>Adjacency List + Fibonacci Heap</strong></td>
+                <td>$O(E + V \log V)$</td>
+                <td>Theoretically optimal for massive dense graphs ($O(1)$ amortized decrease-key).</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>Space Complexity:</strong> $O(V + E)$ to store the network graph, visited set, and candidate priority queue.
+          </p>
+        </section>
+
+        <section class="theory-section">
+          <h2>5. Prim's vs. Kruskal's Algorithm: Telecom Comparison</h2>
+          <table class="theory-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Prim's Algorithm</th>
+                <th>Kruskal's Algorithm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Core Philosophy</strong></td>
+                <td>Vertex-growing: grows a single connected tree outwards from a seed hub.</td>
+                <td>Edge-growing: considers all edges globally and merges a forest of trees.</td>
+              </tr>
+              <tr>
+                <td><strong>Primary Data Structure</strong></td>
+                <td>Min-Priority Queue / Binary Heap</td>
+                <td>Disjoint Set Union (Union-Find)</td>
+              </tr>
+              <tr>
+                <td><strong>Disconnected Graphs</strong></td>
+                <td>Spans the component containing the starting city.</td>
+                <td>Naturally outputs a Minimum Spanning Forest across all components.</td>
+              </tr>
+              <tr>
+                <td><strong>Best Suited For</strong></td>
+                <td>Dense graphs or when expanding outwards from a primary data center / capital.</td>
+                <td>Sparse networks with edges already presorted or easy to sort.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="theory-section">
+          <h2>6. Real-World Telecom Nuance: Resilience vs. Pure MST</h2>
+          <p>
+            While a pure MST provides the absolute lowest upfront CapEx, an MST is a tree and therefore has <strong>zero topological redundancy</strong>: if any single optical cable is severed by an excavator or road construction, the network partitions into two isolated halves.
+          </p>
+          <p>
+            In production telecom engineering, planners use Prim's MST as the foundational cost-minimal baseline, and then selectively add a few high-value cross-cables to create <strong>2-connected self-healing rings (such as DWDM or SONET/SDH protection rings)</strong>, achieving resilience with minimal additional cost.
+          </p>
+        </section>
+
+      </article>
+    </section>
+
+    <!-- 3. INTERACTIVE QUIZ TAB -->
+    <section id="tab-panel-quiz" class="tab-panel">
+      <div class="quiz-container">
+        <div id="quiz-app-container">
+          <!-- Populated by quiz.js -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Final MST Summary & City Connection Order Modal -->
+  <div id="modal-mst-summary" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-icon">🏆</span>
+          <div>
+            <h3 class="modal-title">Minimum Spanning Tree & Final City Order</h3>
+            <p class="modal-subtitle">Complete chronological connection sequence, cable lengths & cycle prevention summary</p>
+          </div>
+        </div>
+        <button id="btn-close-mst-summary" class="modal-close" title="Close modal">✕</button>
+      </div>
+      <div class="modal-body" id="modal-mst-summary-body">
+        <!-- Rendered by render.js -->
+      </div>
+      <div class="modal-footer">
+        <button id="btn-copy-mst-summary" class="btn-action-small"><span>📋</span> Copy Order Summary</button>
+        <button id="btn-close-modal-done" class="btn-action-small btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification -->
+  <aside id="toast-notification" class="toast-notification" role="status" aria-live="polite">
+    Notification message
+  </aside>
+
+  <!-- Application Scripts (Loaded in dependency order) -->
+  <script src="data/presets.js"></script>
+  <script src="data/codeSnippets.js"></script>
+  <script src="data/quizQuestions.js"></script>
+  <script src="js/minHeap.js"></script>
+  <script src="js/prim.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/graphCanvas.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

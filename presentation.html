@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fibre Optic Network Design — 10-Minute Presentation</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --cyan: #00f0ff;
+      --emerald: #00ff88;
+      --amber: #ffb800;
+      --ruby: #ef4444;
+      --purple: #c084fc;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Control Bar */
+    .deck-header {
+      height: 48px;
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .speaker-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .speaker-pill {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .spk-1 { background: rgba(0, 240, 255, 0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+    .spk-2 { background: rgba(0, 255, 136, 0.15); color: var(--emerald); border: 1px solid var(--emerald); }
+    .spk-3 { background: rgba(192, 132, 252, 0.15); color: var(--purple); border: 1px solid var(--purple); }
+
+    .timer-badge {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-weight: 700;
+      color: var(--amber);
+      background: #000;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+    }
+
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-ctrl {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .btn-ctrl:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* Main Slides Container */
+    .slides-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1150px;
+      height: 100%;
+      max-height: 640px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 36px 44px;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Slide Header */
+    .slide-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .slide-title {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 24px;
+      line-height: 1.25;
+    }
+
+    /* Slide Content Layouts */
+    .content-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      flex: 1;
+    }
+
+    .content-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      flex: 1;
+    }
+
+    .card-box {
+      background: rgba(7, 11, 20, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .card-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .card-list li {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .card-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    /* Title Slide Specifics */
+    .slide-hero {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: 100%;
+    }
+
+    .hero-badge {
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .hero-title {
+      font-size: 2.7rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .team-badge-group {
+      display: flex;
+      gap: 14px;
+    }
+
+    .team-badge {
+      background: #060a12;
+      border: 1px solid var(--card-border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+
+    /* Speaker Notes Drawer */
+    .notes-drawer {
+      height: 120px;
+      background: #04070e;
+      border-top: 1px solid var(--card-border);
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .notes-drawer.open {
+      display: block;
+    }
+
+    .notes-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 4px;
+    }
+
+    /* Footer Progress Bar */
+    .deck-footer {
+      height: 6px;
+      background: #04070e;
+      width: 100%;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--emerald));
+      width: 8.33%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation & Timer -->
+  <header class="deck-header">
+    <div class="brand-title">
+      <span>⚡ FIBRE MST</span>
+      <span style="color: var(--text-muted); font-size: 0.75rem;">| 10-Minute Presentation</span>
+    </div>
+
+    <div class="speaker-indicator">
+      <span id="speaker-pill" class="speaker-pill spk-1">Speaker 1</span>
+      <span style="color: var(--text-muted); font-size: 0.75rem;">Time:</span>
+      <span id="timer-display" class="timer-badge">00:00</span>
+      <button id="btn-timer-toggle" class="btn-ctrl" title="Start/Pause Timer">▶ Start</button>
+      <button id="btn-timer-reset" class="btn-ctrl" title="Reset Timer">↺</button>
+    </div>
+
+    <div class="deck-controls">
+      <button id="btn-notes-toggle" class="btn-ctrl" title="Toggle Speaker Script (Key: N)">📝 Notes</button>
+      <button id="btn-prev" class="btn-ctrl" title="Previous (Left Arrow)">◀</button>
+      <span id="slide-num" style="font-family: monospace; font-size: 0.85rem;">1 / 12</span>
+      <button id="btn-next" class="btn-ctrl" title="Next (Right Arrow / Space)">▶</button>
+      <button id="btn-fs" class="btn-ctrl" title="Fullscreen (Key: F)">⛶</button>
+      <a href="index.html" target="_blank" class="btn-ctrl" style="text-decoration: none; color: var(--emerald); border-color: rgba(0,255,136,0.4);" title="Open Live Visualizer">⚡ Live Demo</a>
+    </div>
+  </header>
+
+  <!-- Slides Viewport -->
+  <main class="slides-viewport">
+
+    <!-- SLIDE 1: Title -->
+    <section class="slide active" data-speaker="Speaker 1" data-spk-class="spk-1" data-notes="Welcome everyone. We are a team of three presenting our project: Fibre Optic Network Design using Prim's Algorithm. In this 10-minute presentation, we will walk you through the real-world engineering motivation behind minimum optical cable routing, our complete software architecture, step-by-step algorithmic visualization, and technical challenges solved. Let's begin with the engineering problem.">
+      <div class="slide-hero">
+        <div class="hero-badge">ALGORITHM DESIGN &amp; TELECOM OPTIMIZATION</div>
+        <h1 class="hero-title">Fibre Optic Network Design<br>Using Prim's Algorithm</h1>
+        <p class="hero-subtitle">An interactive Minimum Spanning Tree (MST) simulation engine modeling regional telecommunications infrastructure, priority queues, and capital expenditure minimization.</p>
+        <div class="team-badge-group">
+          <div class="team-badge"><strong style="color:var(--cyan)">Speaker 1:</strong> Motivation &amp; Theory (0-3m)</div>
+          <div class="team-badge"><strong style="color:var(--emerald)">Speaker 2:</strong> Architecture &amp; Demo (3-6m)</div>
+          <div class="team-badge"><strong style="color:var(--purple)">Speaker 3:</strong> Challenges &amp; Complexity (6-10m)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: Real-World Motivation -->
+    <section class="slide" data-speaker="Speaker 1" data-spk-class="spk-1" data-notes="Why does MST matter in telecom? Laying optical fiber requires civil trenching along highways and railway lines. This costs between ₹50,000 and ₹1,00,000 per kilometer. If you connect 8 cities with unnecessary redundant loops, you burn crores of rupees. At the same time, every administrative and tech hub must be fully reachable. This is mathematically formulated as finding a Minimum Spanning Tree over an undirected weighted graph.">
+      <div class="slide-tag">SPEAKER 1: PROBLEM CONTEXT (0:00 - 1:15)</div>
+      <h2 class="slide-title">Real-World Motivation: Telecom Infrastructure</h2>
+      <div class="content-grid-3">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">1. High Trenching Costs</div>
+          <ul class="card-list">
+            <li>Trenching and laying optical fiber costs ₹50,000 – ₹1,00,000 per km.</li>
+            <li>Civil construction and right-of-way permissions represent 80% of capex.</li>
+            <li>Redundant loops in the primary backbone waste public capital.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">2. Complete Connectivity</div>
+          <ul class="card-list">
+            <li>All district headquarters and tech parks must be interconnected.</li>
+            <li>Communication packets must travel between any city pair without partition.</li>
+            <li>Formal Requirement: Connected, undirected weighted graph G = (V, E).</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--amber);">3. Real Case: KFON Grid</div>
+          <ul class="card-list">
+            <li>Modeled directly after the Kerala Fibre Optic Network (KFON).</li>
+            <li>Interconnects 14 regional hubs from Trivandrum to Kannur.</li>
+            <li>Demonstrates how graph theory delivers tangible financial and societal ROI.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: The Cut Property -->
+    <section class="slide" data-speaker="Speaker 1" data-spk-class="spk-1" data-notes="The theoretical backbone of Prim's algorithm is the Cut Property. If you partition vertices into two sets—visited S and unvisited V minus S—the lightest edge crossing that cut is guaranteed to belong to the MST. Prim's algorithm starts with a single hub and greedily picks the cheapest crossing cable at each step. This ensures exactly V minus 1 cables, zero loops, and start-node invariance: starting from Kochi or Trivandrum yields the exact same total cost.">
+      <div class="slide-tag">SPEAKER 1: ALGORITHMIC FOUNDATION (1:15 - 2:15)</div>
+      <h2 class="slide-title">Theoretical Foundation: MST &amp; The Cut Property</h2>
+      <div class="content-grid-2">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">The Cut Property (Greedy Core)</div>
+          <ul class="card-list">
+            <li><strong>Cut Definition:</strong> Any partition dividing vertices into sets S and V \ S.</li>
+            <li><strong>Invariant:</strong> The minimum-weight edge crossing the cut belongs to the MST.</li>
+            <li><strong>Greedy Choice:</strong> At each step, Prim's grows a tree T from a seed hub by picking the cheapest crossing edge (u ∈ T, v ∉ T).</li>
+            <li><strong>Optimality Proof:</strong> Proven mathematically via cut-crossing exchange arguments.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">Spanning Tree Properties in Telecom</div>
+          <ul class="card-list">
+            <li><strong>Exactly |V| - 1 Cables:</strong> An 8-city grid requires exactly 7 optical connections.</li>
+            <li><strong>Acyclic Guarantee:</strong> Zero routing loops, preventing optical broadcast storms.</li>
+            <li><strong>Start-Node Invariance:</strong> Starting from Central Metro, North Gateway, or Kochi produces identical total cost.</li>
+            <li><strong>Global Cost Minimization:</strong> sum(w_e) is minimized across all 2^E spanning subgraphs.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: Prim's vs Kruskal's -->
+    <section class="slide" data-speaker="Speaker 1" data-spk-class="spk-1" data-notes="Why did we choose Prim's over Kruskal's? In telecom network deployment, infrastructure grows outward from a central exchange station—you don't lay isolated cables between remote towns before connecting the core. Furthermore, for dense urban mesh networks, Prim's with a priority queue is faster and vertex-centric. I will now hand over to Speaker 2, who will walk through our system architecture and demonstrate the engine.">
+      <div class="slide-tag">SPEAKER 1: ALGORITHM SELECTION (2:15 - 3:00)</div>
+      <h2 class="slide-title">Prim's vs. Kruskal's: Why Prim's for Telecom?</h2>
+      <div class="card-box" style="flex:1;">
+        <ul class="card-list" style="font-size: 1rem; gap: 14px;">
+          <li><strong>Deployment Realism:</strong> Optical cables are physically laid outward from an established central telecom hub (Hub-and-Spoke expansion). You don't deploy disjointed cables in isolated towns before connecting the core.</li>
+          <li><strong>Vertex-Centric Growth:</strong> Prim's expands outward from a single active exchange point, matching telecom civil trenching logistics.</li>
+          <li><strong>Dense Network Advantage:</strong> In dense urban regional meshes (E ≈ V²), Prim's achieves O((V + E) log V), outperforming Kruskal's global edge-sorting step.</li>
+          <li><strong>Data Structure Paradigm:</strong> Uses a Min-Priority Queue (Binary Heap) tracking crossing cables, contrasted with Kruskal's Disjoint-Set Union (Union-Find).</li>
+          <li style="color: var(--emerald); font-weight: 600;"><strong>Handoff:</strong> Speaker 2 will now explain how our application translates this mathematical engine into a deterministic single-screen visualizer.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: System Architecture -->
+    <section class="slide" data-speaker="Speaker 2" data-spk-class="spk-2" data-notes="Thank you Speaker 1. I am Speaker 2, and I will walk you through our software architecture. We built this application with three core design rules: First, strict separation between computation and animation. Prim's runs synchronously once, generating immutable snapshots. Second, a 100vh single-screen ergonomic layout with zero page scrolling. And third, zero build dependencies—it runs instantly by double-clicking index.html.">
+      <div class="slide-tag">SPEAKER 2: ARCHITECTURE (3:00 - 4:00)</div>
+      <h2 class="slide-title">Software Architecture: Static Zero-Build Engine</h2>
+      <div class="content-grid-3">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">1. Separation of Concerns</div>
+          <ul class="card-list">
+            <li>Prim's runs synchronously once, creating an array of immutable snapshots.</li>
+            <li>The player engine acts strictly as a state playback controller.</li>
+            <li>Guarantees deterministic Step Forward, Step Back, and Timeline Scrubbing.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">2. Single-Screen Ergonomics</div>
+          <ul class="card-list">
+            <li>Strict 100vh layout: Zero vertical page scrolling needed.</li>
+            <li>Canvas on the left; Code Viewer and Priority Queue Inspector on the right.</li>
+            <li>Docked bottom-right playback controls are always pinned and accessible.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--purple);">3. Zero-Build Portability</div>
+          <ul class="card-list">
+            <li>100% Vanilla JS, HTML5, and CSS3. Zero webpack, zero npm runtime bloat.</li>
+            <li>Runs directly over file:// protocol via double-click on index.html.</li>
+            <li>Universal UMD modules allow 100% automated testing in Node.js.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: Min-Priority Queue & Snapshots -->
+    <section class="slide" data-speaker="Speaker 2" data-spk-class="spk-2" data-notes="At the heart of the computation is our custom Binary Min-Heap. Each node in the heap contains the edge ID, endpoints, and cable weight. Push and pop operations run in O(log N). Crucially, we implemented a non-destructive getSortedItems method, which lets the live UI inspector display a sorted preview of candidate cables without mutating the heap. Each step produces an immutable snapshot recording city arrival order, active code line, and budget telemetry.">
+      <div class="slide-tag">SPEAKER 2: CORE ENGINE (4:00 - 5:15)</div>
+      <h2 class="slide-title">Core Engine: Min-Priority Queue &amp; Snapshots</h2>
+      <div class="content-grid-2">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">Binary Min-Heap Implementation</div>
+          <ul class="card-list">
+            <li><strong>Custom MinHeap Class:</strong> Stores candidate optical edges: { edgeId, u, v, w }.</li>
+            <li><strong>Push (Enqueue):</strong> O(log N) bubble-up preserving heap parent invariant.</li>
+            <li><strong>Pop (Extract-Min):</strong> O(log N) bubble-down retrieving the cheapest cable.</li>
+            <li><strong>Non-Destructive Inspection:</strong> getSortedItems() provides sorted live preview for the UI without altering heap order.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">Immutable Snapshot Schema</div>
+          <ul class="card-list">
+            <li><strong>step &amp; action:</strong> Tracks phase ('startVisit', 'popMin', 'addToMst', 'skipVisited').</li>
+            <li><strong>status:</strong> Drives visual color states ('candidate', 'considered', 'added', 'rejected').</li>
+            <li><strong>cityOrder:</strong> Chronological arrival sequence tracking cities #1 to #V.</li>
+            <li><strong>activeLine:</strong> Synchronizes code highlighting across JS, Python, C++, and Java.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Visual Language & Live Demo -->
+    <section class="slide" data-speaker="Speaker 2" data-spk-class="spk-2" data-notes="On the visual canvas, optical cables communicate their state in real-time. When a cable is chosen, it turns into a glowing laser emerald beam with a flowing pulse animation and an order badge like '#1 • 15 km'. Evaluating cables pulse amber, candidate edges in the queue are dashed cyan, and loop-causing cables flash ruby red before being skipped. I will now hand over to Speaker 3 to discuss our engineering challenges and complexity analysis.">
+      <div class="slide-tag">SPEAKER 2: VISUALIZATION &amp; DEMO (5:15 - 6:30)</div>
+      <h2 class="slide-title">Visual State Language &amp; Optical Cable States</h2>
+      <div class="card-box" style="flex:1;">
+        <ul class="card-list" style="font-size: 0.95rem; gap: 12px;">
+          <li><strong style="color: var(--emerald);">🌟 CHOSEN (Laser Emerald #00ff88):</strong> Selected MST branch. High-intensity glowing line with flowing dash animation. Badge displays sequence rank (e.g., '#1 • 15 km').</li>
+          <li><strong style="color: var(--amber);">🟡 EVALUATING (Laser Amber #ffb800):</strong> Currently popped minimum candidate cable under inspection. Amber pulsing glow signals algorithmic decision-making.</li>
+          <li><strong style="color: var(--cyan);">🔵 CANDIDATE (Laser Cyan #00f0ff):</strong> Waiting inside the Min-Priority Queue. Dashed laser beam representing available cut-crossing cables.</li>
+          <li><strong style="color: var(--ruby);">🔴 CYCLE REJECTED (Laser Ruby #ef4444):</strong> Discarded redundant route. Red dashed line explaining that destination city has already joined the network cut.</li>
+          <li><strong style="color: #64748b;">⚪ OMITTED (Subdued Slate #1e293b):</strong> Preserved ring/mesh cross-connects shown faintly with '(Omitted)' tags to demonstrate loop-free spanning tree.</li>
+          <li style="color: var(--purple); font-weight: 600;"><strong>Handoff:</strong> Speaker 3 will now explain our technical breakthroughs, complexity analysis, and telecom economic impact.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: Technical Challenges Solved -->
+    <section class="slide" data-speaker="Speaker 3" data-spk-class="spk-3" data-notes="Thank you Speaker 2. I am Speaker 3. During development, we encountered and solved three major engineering challenges: First was the SVG Zero-Area Bounding Box bug. In the Regional Mesh, Central Metro and North Gateway share x=350, creating a perfectly vertical line. Browsers default SVG filters to objectBoundingBox; because width was 0, the browser calculated 0 pixels and completely erased the cable! We solved this by moving glow filters to CSS drop-shadow. Second, we completed radial spoke symmetry for all outer cities. And third, we engineered responsive breakpoints so the top bar never overflows.">
+      <div class="slide-tag">SPEAKER 3: ENGINEERING BREAKTHROUGHS (6:30 - 7:45)</div>
+      <h2 class="slide-title">Key Technical Challenges &amp; Solutions</h2>
+      <div class="content-grid-3">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">1. SVG Filter Zero-Area Bug</div>
+          <ul class="card-list">
+            <li><strong>Problem:</strong> Perfectly vertical cables (x1 === x2, Central Metro to North Gateway) vanished from screen.</li>
+            <li><strong>Cause:</strong> SVG objectBoundingBox filter calculates 0-width area, discarding all pixels.</li>
+            <li><strong>Fix:</strong> Replaced inline SVG filters with CSS drop-shadow, guaranteeing 100% stroke visibility.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">2. Radial Spoke Symmetry</div>
+          <ul class="card-list">
+            <li><strong>Problem:</strong> Regional Mesh had missing cross-connect cables to West Valley (N7) and Northeast Tech (N3).</li>
+            <li><strong>Fix:</strong> Engineered e13 (20 km) and e14 (23 km), completing full radial spoke mesh connectivity.</li>
+            <li>Balanced geometry on 700x480 canvas with zero label overlap.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--purple);">3. Responsive Viewport</div>
+          <ul class="card-list">
+            <li>Decoupled panel scrolling (Visualizer locked at 100vh, Theory &amp; Quiz smoothly scrollable).</li>
+            <li>Breakpoints at 1240px, 1040px, and 820px preventing top-bar control overflow.</li>
+            <li>Dropdown text truncation with ellipsis ensuring clean presentation on any screen.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Complexity Analysis -->
+    <section class="slide" data-speaker="Speaker 3" data-spk-class="spk-3" data-notes="Let's examine asymptotic performance. With our Binary Min-Heap, each of the E edges is enqueued at most twice and extracted once, giving O(E log V). Building the adjacency list takes O(V + E). Thus, total time complexity is O((V + E) log V). In sparse telecom graphs where E is proportional to V, this simplifies to O(V log V). Space complexity is O(V + E) for the heap and adjacency list. Our test suite rigorously verifies start-node invariance, cycle avoidance, and disconnected island detection.">
+      <div class="slide-tag">SPEAKER 3: ASYMPTOTIC COMPLEXITY (7:45 - 8:30)</div>
+      <h2 class="slide-title">Asymptotic Complexity &amp; Test Verification</h2>
+      <div class="content-grid-2">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">Time Complexity: O((V + E) log V)</div>
+          <ul class="card-list">
+            <li><strong>Adjacency List Construction:</strong> O(V + E) upfront mapping.</li>
+            <li><strong>Heap Insertions:</strong> At most 2|E| insertions -> O(E log V).</li>
+            <li><strong>Heap Extractions:</strong> Extract-min for each crossing candidate -> O(E log V).</li>
+            <li><strong>Sparse Telecom Reality:</strong> In real road/railway grids (E = O(V)), runtime reduces to <strong>O(V log V)</strong>.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">Space Complexity &amp; Unit Tests</div>
+          <ul class="card-list">
+            <li><strong>Space Complexity:</strong> O(V + E) for Min-Heap, visited set, and snapshot arrays.</li>
+            <li><strong>Disconnected Detection:</strong> Gracefully identifies island components and yields a Spanning Forest.</li>
+            <li><strong>Automated Test Suite:</strong> 12/12 unit tests passing in Node.js verifying heap integrity, invariance, and line mappings.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: Economics & Impact -->
+    <section class="slide" data-speaker="Speaker 3" data-spk-class="spk-3" data-notes="The real-world impact is highlighted by our capital expenditure telemetry. In our Kerala KFON model, a full mesh requires over 1,200 km of trenching. Prim's MST connects all 8 regional district hubs using only 510 km of optical fiber—saving 690 km of civil trenching, which translates to over ₹3.45 Crores in taxpayer capital savings. Furthermore, our multilingual trace across JavaScript, Python, C++, and Java, plus the interactive quiz, makes this a powerful educational platform.">
+      <div class="slide-tag">SPEAKER 3: BUSINESS &amp; PEDAGOGICAL ROI (8:30 - 9:15)</div>
+      <h2 class="slide-title">Telecom Economics &amp; Educational Impact</h2>
+      <div class="content-grid-2">
+        <div class="card-box">
+          <div class="card-title" style="color: var(--cyan);">Trenching Capex Telemetry</div>
+          <ul class="card-list">
+            <li><strong>Live Rupee Counter:</strong> Real-time Indian Rupee (₹) budget counter with configurable ₹/km rates.</li>
+            <li><strong>KFON Infrastructure Case:</strong> A full mesh requires 1,200+ km of trenching.</li>
+            <li><strong>Prim's MST Solution:</strong> Connects all 8 hubs using only 510 km of optical fiber.</li>
+            <li><strong>Capital Savings:</strong> Saves 690 km of trenching = <strong>₹3.45 Crores ($415,000 USD) saved</strong>.</li>
+          </ul>
+        </div>
+        <div class="card-box">
+          <div class="card-title" style="color: var(--emerald);">Educational &amp; Pedagogical Features</div>
+          <ul class="card-list">
+            <li><strong>Multilingual Code Trace:</strong> Line-by-line debugging across JS, Python 3, C++ STL, and Java.</li>
+            <li><strong>10-Question Interactive Quiz:</strong> Cut Property conceptual rationale and high-score tracking.</li>
+            <li><strong>Interactive Canvas:</strong> Drag nodes, draw cables, test custom networks with undo/redo.</li>
+            <li><strong>One-Click MST Summary:</strong> Instant clipboard export of connection ledger and omitted cables.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: Summary & Takeaways -->
+    <section class="slide" data-speaker="Speaker 3" data-spk-class="spk-3" data-notes="To summarize: We transformed an abstract textbook algorithm into a production-grade educational telecom modeling tool. We solved subtle SVG rendering engine bugs, verified the system with 12 automated tests, and proved how greedy graph optimization saves real infrastructure money. We are now open for questions and ready for the live demonstration.">
+      <div class="slide-tag">SPEAKER 3: CONCLUSION (9:15 - 9:45)</div>
+      <h2 class="slide-title">Summary &amp; Key Takeaways</h2>
+      <div class="card-box" style="flex:1;">
+        <ul class="card-list" style="font-size: 1.05rem; gap: 16px;">
+          <li><strong>Bridging Theory and Practice:</strong> Transformed textbook Minimum Spanning Tree concepts into an authentic, production-grade telecom civil engineering tool.</li>
+          <li><strong>Rigorous Software Engineering:</strong> Built an immutable snapshot state machine, verified Min-Heap priority queue, and solved zero-area SVG rendering bugs.</li>
+          <li><strong>Zero Dependency Portability:</strong> A 100% static application that runs directly in any modern browser without npm build steps or server backends.</li>
+          <li><strong>Proven Optimization ROI:</strong> Demonstrated over 57% optical cable savings on regional network grids, minimizing capital budget expenditures.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SLIDE 12: Q&A -->
+    <section class="slide" data-speaker="All Speakers" data-spk-class="spk-1" data-notes="Thank you professor and colleagues. We are now ready to take your questions and demonstrate any topology on our live visualizer.">
+      <div class="slide-hero">
+        <div class="hero-badge" style="color:var(--emerald); border-color:var(--emerald);">Q &amp; A SESSION</div>
+        <h1 class="hero-title">Thank You! Questions &amp; Discussion</h1>
+        <p class="hero-subtitle">Ready for live demonstration: Kerala Fibre Grid (KFON)  •  Regional Ring &amp; Mesh  •  Custom Topologies</p>
+        <div class="team-badge-group">
+          <div class="team-badge">Speaker 1: Theoretical &amp; Algorithmic Foundation</div>
+          <div class="team-badge">Speaker 2: Architecture, Snapshots &amp; Live Demo</div>
+          <div class="team-badge">Speaker 3: Engineering Challenges &amp; Complexity</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Speaker Script Drawer -->
+  <aside id="notes-drawer" class="notes-drawer">
+    <div class="notes-header">SPEAKER SCRIPT &amp; TALKING POINTS:</div>
+    <div id="notes-text">Welcome everyone. We are a team of three presenting our project...</div>
+  </aside>
+
+  <!-- Footer Progress Bar -->
+  <footer class="deck-footer">
+    <div id="progress-bar" class="progress-bar"></div>
+  </footer>
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+      let currentIndex = 0;
+
+      const slideNumEl = document.getElementById('slide-num');
+      const progressBar = document.getElementById('progress-bar');
+      const speakerPill = document.getElementById('speaker-pill');
+      const notesDrawer = document.getElementById('notes-drawer');
+      const notesText = document.getElementById('notes-text');
+      const timerDisplay = document.getElementById('timer-display');
+      const btnTimerToggle = document.getElementById('btn-timer-toggle');
+      const btnTimerReset = document.getElementById('btn-timer-reset');
+
+      // Timer variables (10 mins = 600s)
+      let timerSeconds = 0;
+      let timerInterval = null;
+      let isTimerRunning = false;
+
+      function updateSlide(index) {
+        if (index < 0 || index >= totalSlides) return;
+        currentIndex = index;
+
+        slides.forEach((s, idx) => {
+          s.classList.toggle('active', idx === currentIndex);
+        });
+
+        const activeSlide = slides[currentIndex];
+        slideNumEl.textContent = `${currentIndex + 1} / ${totalSlides}`;
+        progressBar.style.width = `${((currentIndex + 1) / totalSlides) * 100}%`;
+
+        // Update speaker pill
+        const speaker = activeSlide.getAttribute('data-speaker') || 'Team';
+        const spkClass = activeSlide.getAttribute('data-spk-class') || 'spk-1';
+        speakerPill.textContent = speaker;
+        speakerPill.className = `speaker-pill ${spkClass}`;
+
+        // Update speaker notes
+        const notes = activeSlide.getAttribute('data-notes') || 'No notes for this slide.';
+        notesText.textContent = notes;
+      }
+
+      function nextSlide() {
+        if (currentIndex < totalSlides - 1) updateSlide(currentIndex + 1);
+      }
+
+      function prevSlide() {
+        if (currentIndex > 0) updateSlide(currentIndex - 1);
+      }
+
+      // Keyboard navigation
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowRight', 'PageDown', ' '].includes(e.key)) {
+          e.preventDefault();
+          nextSlide();
+        } else if (['ArrowLeft', 'PageUp'].includes(e.key)) {
+          e.preventDefault();
+          prevSlide();
+        } else if (e.key.toLowerCase() === 'n') {
+          notesDrawer.classList.toggle('open');
+        } else if (e.key.toLowerCase() === 'f') {
+          toggleFullscreen();
+        }
+      });
+
+      document.getElementById('btn-next').addEventListener('click', nextSlide);
+      document.getElementById('btn-prev').addEventListener('click', prevSlide);
+      document.getElementById('btn-notes-toggle').addEventListener('click', () => {
+        notesDrawer.classList.toggle('open');
+      });
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+      document.getElementById('btn-fs').addEventListener('click', toggleFullscreen);
+
+      // Timer implementation
+      function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+
+      btnTimerToggle.addEventListener('click', () => {
+        if (isTimerRunning) {
+          clearInterval(timerInterval);
+          isTimerRunning = false;
+          btnTimerToggle.textContent = '▶ Resume';
+        } else {
+          isTimerRunning = true;
+          btnTimerToggle.textContent = '⏸ Pause';
+          timerInterval = setInterval(() => {
+            timerSeconds++;
+            timerDisplay.textContent = formatTime(timerSeconds);
+
+            // Warning colors for 10 min mark
+            if (timerSeconds >= 600) {
+              timerDisplay.style.color = 'var(--ruby)';
+            } else if (timerSeconds >= 540) {
+              timerDisplay.style.color = 'var(--amber)';
+            }
+          }, 1000);
+        }
+      });
+
+      btnTimerReset.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        timerSeconds = 0;
+        timerDisplay.textContent = '00:00';
+        timerDisplay.style.color = 'var(--amber)';
+        btnTimerToggle.textContent = '▶ Start';
+      });
+
+      // Init first slide
+      updateSlide(0);
+    })();
+  </script>
+</body>
+</html>
