@@ -16,14 +16,14 @@
       description: "Major regional optical backbone across Kerala districts with realistic road/rail distances (km).",
       startNode: "Kochi",
       nodes: [
-        { id: "Trivandrum", name: "Thiruvananthapuram", x: 260, y: 520 },
-        { id: "Kollam", name: "Kollam", x: 220, y: 440 },
-        { id: "Alappuzha", name: "Alappuzha", x: 190, y: 360 },
-        { id: "Kochi", name: "Kochi Hub", x: 200, y: 270 },
-        { id: "Thrissur", name: "Thrissur", x: 250, y: 190 },
-        { id: "Palakkad", name: "Palakkad", x: 380, y: 180 },
-        { id: "Kozhikode", name: "Kozhikode", x: 170, y: 110 },
-        { id: "Kannur", name: "Kannur", x: 120, y: 40 }
+        { id: "Kannur", name: "Kannur", x: 105, y: 65 },
+        { id: "Kozhikode", name: "Kozhikode", x: 200, y: 160 },
+        { id: "Palakkad", name: "Palakkad", x: 555, y: 105 },
+        { id: "Thrissur", name: "Thrissur", x: 375, y: 280 },
+        { id: "Kochi", name: "Kochi Hub", x: 205, y: 310 },
+        { id: "Alappuzha", name: "Alappuzha", x: 105, y: 420 },
+        { id: "Kollam", name: "Kollam", x: 405, y: 415 },
+        { id: "Trivandrum", name: "Thiruvananthapuram", x: 590, y: 400 }
       ],
       edges: [
         { id: "e1", u: "Kannur", v: "Kozhikode", w: 90 },

@@ -206,6 +206,10 @@ Each step of the algorithm captures an immutable snapshot:
     - Omitted Ring/Mesh Cross-Cables table explaining why redundant cables were skipped to avoid loops.
     - Telemetry metrics (Total Cities Interconnected, Total Optical Cable Laid, CapEx Budget in ₹, Total Cable Saved).
     - One-click copy summary button for course homework and reports.
+- **Kerala Fibre Grid (KFON) Layout Optimization (`presets.kerala`):**
+  - Resolved cramped, vertically squashed layout where nodes were compressed into a narrow 140px strip and Thiruvananthapuram was pushed outside the canvas (`y: 520` on a 480px viewBox).
+  - Re-spaced all 8 district headquarters across the full `700x480` canvas (`x: 105` to `590`, `y: 65` to `420`) reflecting Kerala's natural northwest-to-southeast geographic corridor with Palakkad to the east through the Palakkad Gap.
+  - Ensured over 50px clearance for all optical cables, preventing badge text overlapping and guaranteeing full visibility of all cities, labels, and MST tree branches.
 - **Regional Ring & Mesh Topology & Spoke Completion (`presets.medium`):**
   - Resolved missing cross-connect cables by adding direct links from central hub `Central Metro (N1)` to `West Valley (N7)` (`20 km`) and `Northeast Tech (N3)` (`23 km`).
   - Restored full radial spoke mesh connectivity across all 7 perimeter cities (`N2` North, `N3` Northeast, `N4` East, `N5` South, `N6` Southwest, `N7` West, `N8` Northwest).
